@@ -156,10 +156,18 @@ contingency_table(list("Age"="agebin",
 #  write.table(tab$mat, "mytable.csv", row.names=FALSE, col.names=FALSE, sep=',')
 
 ## ------------------------------------------------------------------------
-proportion <- function(outcome_level, outcome_name, data) {
-    outcome_count <- sum(data[[outcome_name]] == outcome_level)
-    proportion <- outcome_count / nrow(data)
-    round(proportion, 2)
+proportion <- function(data, outcome_level=NULL, outcome_name=NULL, independent_level=NULL, independent_name=NULL) {
+    if (!is.null(outcome_level) && !is.null(outcome_name))
+        data <- data[data[[outcome_name]] == outcome_level, ]
+    
+    count <- if (!is.null(independent_level) && !is.null(independent_name)) {
+        sum(data[[independent_name]] == independent_level)
+    } else {
+        nrow(data)
+    }
+    
+    proportion <- count / nrow(data)
+    sprintf("%0.1f%%", proportion*100)
 }
 
 ## ------------------------------------------------------------------------
@@ -170,10 +178,11 @@ contingency_table(independents=list("Age"="agebin",
                   data=treat)
 
 ## ------------------------------------------------------------------------
-meanage_sd <- function(outcome_level, outcome_name, data) {
-    sub_data <- data[data[[outcome_name]] == outcome_level, ]
-    mean <- round(mean(sub_data[['age']]), 2)
-    sd <- round(sd(sub_data[['age']]), 2)
+meanage_sd <- function(data, outcome_level=NULL, outcome_name=NULL) {
+    if (!is.null(outcome_level) && !is.null(outcome_name)) 
+        data <- data[data[[outcome_name]] == outcome_level, ]
+    mean <- round(mean(data[['age']]), 2)
+    sd <- round(sd(data[['age']]), 2)
     paste0(mean, " (", sd, ")")
 }
 
@@ -187,7 +196,10 @@ contingency_table(independents=list("Age"="agebin",
                   data=treat)
 
 ## ------------------------------------------------------------------------
-lr <- function(var, all_vars, data) {
+lr <- function(data, var=NULL, all_vars=NULL) {
+    if (is.null(var) || is.null(all_vars)) {
+        return("")
+    }
     levs <- levels(data[[var]])
     form <- as.formula(paste('age ~', var))
     mod <- lm(form, data)
